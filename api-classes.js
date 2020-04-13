@@ -22,7 +22,8 @@ class StoryList {
   // TODO: Note the presence of `static` keyword: this indicates that getStories
   // is **not** an instance method. Rather, it is a method that is called on the
   // class directly. Why doesn't it make sense for getStories to be an instance method?
-
+  // A class/static method would be preferrably since this factory method is functional
+  // or without side effect; ie. it doesn't save or modify any states of an instance.
   static async getStories() {
     // query the /stories endpoint (no auth required)
     const response = await axios.get(`${BASE_URL}/stories`);
@@ -47,6 +48,23 @@ class StoryList {
     // TODO - Implement this functions!
     // this function should return the newly created story so it can be used in
     // the script.js file where it will be appended to the DOM
+    try {
+      const response = await axios.post(`${BASE_URL}/stories`, {
+        token: user.loginToken,
+        story: {
+          author: newStory.author,
+          title: newStory.title,
+          url: newStory.url
+        }
+      });
+      const storyObj = new Story(response.data.story);
+      this.stories.push(storyObj);
+      return storyObj;
+    } catch (error) {
+      debugger;
+      alert(error.message, error.response.statusText);
+    }
+    return null;
   }
 }
 

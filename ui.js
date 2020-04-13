@@ -8,6 +8,7 @@ $(async function() {
   const $ownStories = $("#my-articles");
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
+  const $createStoryForm = $("#create-story-form");
 
   // global storyList variable
   let storyList = null;
@@ -90,6 +91,25 @@ $(async function() {
   });
 
   /**
+   * Event Handler for Submitting story form
+   */
+
+  $createStoryForm.on("submit", async function (event) {
+    event.preventDefault();
+
+    // extract story inputs
+    const author = $('#create-story-author').val();
+    const title = $('#create-story-title').val();
+    const url = $('#create-story-url').val();
+    // create story via POST request
+    const newStory = await storyList.addStory(currentUser, {author, title, url});
+    // append story to HTML
+    generateStoryHTML(newStory);
+    // clear input fields
+    $('#create-story-author, #create-story-title, #create-story-url').val('');
+  });
+
+  /**
    * On page load, checks local storage to see if the user is already logged in.
    * Renders page information accordingly.
    */
@@ -107,6 +127,8 @@ $(async function() {
 
     if (currentUser) {
       showNavForLoggedInUser();
+      // show new story form
+      $createStoryForm.show();
     }
   }
 
@@ -128,6 +150,8 @@ $(async function() {
 
     // update the navigation bar
     showNavForLoggedInUser();
+    // show new story form
+    $createStoryForm.show();
   }
 
   /**
