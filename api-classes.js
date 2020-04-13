@@ -61,8 +61,7 @@ class StoryList {
       this.stories.push(storyObj);
       return storyObj;
     } catch (error) {
-      debugger;
-      alert(error.message, error.response.statusText);
+      axiosErrorHandler(error);
     }
     return null;
   }
@@ -169,6 +168,35 @@ class User {
     existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
     return existingUser;
   }
+
+  /**
+   * Method to make a POST request to /user/<username>/favorites/<storyId>
+   *  and add story to the favorite list
+   * - storyId - a string representing story ID
+   *
+   * Returns the story object added
+   */
+
+  async addFavoriteStory(storyId) {
+    // this function should return the newly created story so it can be used in
+    // the script.js file where it will be appended to the DOM
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
+        {token: this.loginToken}
+      );
+      // check for duplicates; response returns a set
+      // (alternatively, we could check ids in this.favorites prior to request)
+      if (response.data.user.favorites.length > this.favorites.length) {
+        const storyObj = new Story(response.data.user.favorites.pop());
+        this.favorites.push(storyObj);
+        return storyObj;
+      }
+    } catch (error) {
+      axiosErrorHandler(error);
+    }
+    return null;
+  }
 }
 
 /**
@@ -191,4 +219,23 @@ class Story {
     this.createdAt = storyObj.createdAt;
     this.updatedAt = storyObj.updatedAt;
   }
+}
+
+function axiosErrorHandler(error) {
+  if (error.response) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    console.log(error.response.data);
+    console.log(error.response.status);
+    console.log(error.response.headers);
+  } else if (error.request) {
+    // The request was made but no response was received
+    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+    // http.ClientRequest in node.js
+    console.log(error.request);
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    console.log('Error', error.message);
+  }
+  console.log(error.config);
 }

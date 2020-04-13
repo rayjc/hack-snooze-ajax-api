@@ -9,6 +9,10 @@ $(async function() {
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
   const $createStoryForm = $("#create-story-form");
+  const $favoritedArticles = $("#favorited-articles");
+  // icons
+  const starIcon = '<i class="far fa-star"></i>';
+  const trashIcon = '<i class="fas fa-trash-alt"></i>';
 
   // global storyList variable
   let storyList = null;
@@ -86,7 +90,10 @@ $(async function() {
 
   $("body").on("click", "#nav-all", async function() {
     hideElements();
-    await generateStories();
+    // update global variable
+    storyList = await StoryList.getStories()
+    generateStories(storyList.stories, $allStoriesList, starIcon);
+    
     $allStoriesList.show();
   });
 
@@ -104,9 +111,22 @@ $(async function() {
     // create story via POST request
     const newStory = await storyList.addStory(currentUser, {author, title, url});
     // append story to HTML
-    generateStoryHTML(newStory);
+    $ownStories.append(generateStoryHTML(newStory));
     // clear input fields
     $('#create-story-author, #create-story-title, #create-story-url').val('');
+  });
+
+  /**
+   * Event Handler for clicking on star (favorite)
+   */
+
+  $allStoriesList.on("click", ".fa-star", async function () {
+    // add favorite story via POST request
+    const story = await currentUser.addFavoriteStory(this.parentElement.id);
+    // append favorite story to HTML
+    if (story) {
+      $favoritedArticles.append(generateStoryHTML(story));
+    }
   });
 
   /**
@@ -123,12 +143,14 @@ $(async function() {
     //  to get an instance of User with the right details
     //  this is designed to run once, on page load
     currentUser = await User.getLoggedInUser(token, username);
-    await generateStories();
+    // update our global variable
+    storyList = await StoryList.getStories();
+    generateStories(storyList.stories, $allStoriesList, starIcon);
 
     if (currentUser) {
-      showNavForLoggedInUser();
-      // show new story form
-      $createStoryForm.show();
+      generateStories(currentUser.favorites, $favoritedArticles, trashIcon);
+      generateStories(currentUser.ownStories, $ownStories);
+      showElementsForLoggedInUser();
     }
   }
 
@@ -148,10 +170,9 @@ $(async function() {
     // show the stories
     $allStoriesList.show();
 
-    // update the navigation bar
-    showNavForLoggedInUser();
-    // show new story form
-    $createStoryForm.show();
+    generateStories(currentUser.favorites, $favoritedArticles, trashIcon);
+    generateStories(currentUser.ownStories, $ownStories);
+    showElementsForLoggedInUser();
   }
 
   /**
@@ -159,18 +180,14 @@ $(async function() {
    *  which will generate a storyListInstance. Then render it.
    */
 
-  async function generateStories() {
-    // get an instance of StoryList
-    const storyListInstance = await StoryList.getStories();
-    // update our global variable
-    storyList = storyListInstance;
+  function generateStories(stories, $listSelector, icon = '') {
     // empty out that part of the page
-    $allStoriesList.empty();
+    $listSelector.empty();
 
     // loop through all of our stories and generate HTML for them
-    for (let story of storyList.stories) {
-      const result = generateStoryHTML(story);
-      $allStoriesList.append(result);
+    for (let story of stories) {
+      const result = generateStoryHTML(story, icon);
+      $listSelector.append(result);
     }
   }
 
@@ -178,12 +195,13 @@ $(async function() {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story) {
+  function generateStoryHTML(story, icon) {
     let hostName = getHostName(story.url);
 
     // render story markup
     const storyMarkup = $(`
       <li id="${story.storyId}">
+        ${icon}
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -213,6 +231,17 @@ $(async function() {
   function showNavForLoggedInUser() {
     $navLogin.hide();
     $navLogOut.show();
+  }
+
+  function showElementsForLoggedInUser() {
+    // update the navigation bar
+    showNavForLoggedInUser();
+    // show new story form
+    $createStoryForm.show();
+    // show own stories
+    $ownStories.show();
+    // show favorite stories;
+    $favoritedArticles.show();
   }
 
   /* simple function to pull the hostname from a URL */

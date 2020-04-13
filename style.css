@@ -142,11 +142,11 @@ form > hr {
   color: gray;
   font-size: 0.8rem;
   margin: 10px 0;
-  cursor: pointer;
+  /* cursor: pointer; */
 }
 
-.star,
-.trash-can,
+.fa-star,
+.fa-trash-alt,
 .pencil {
   font-size: 0.75rem;
   margin: 0 2px;
