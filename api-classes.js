@@ -197,6 +197,30 @@ class User {
     }
     return null;
   }
+
+  /**
+   * Method to make a DELETE request to /user/<username>/favorites/<storyId>
+   *  and remove the story from list
+   * - storyId - a string representing story ID
+   *
+   */
+
+  async removeFavoriteStory(storyId) {
+    // this function should return the newly created story so it can be used in
+    // the script.js file where it will be appended to the DOM
+    // remove story from list
+    this.favorites.splice(
+      this.favorites.findIndex((item) => item.storyId == storyId), 1
+    );
+    try {
+      const response = await axios.delete(
+        `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
+        { data: {token: this.loginToken} }
+      );
+    } catch (error) {
+      axiosErrorHandler(error);
+    }
+  }
 }
 
 /**

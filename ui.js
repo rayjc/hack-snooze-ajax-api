@@ -125,8 +125,19 @@ $(async function() {
     const story = await currentUser.addFavoriteStory(this.parentElement.id);
     // append favorite story to HTML
     if (story) {
-      $favoritedArticles.append(generateStoryHTML(story));
+      $favoritedArticles.append(generateStoryHTML(story, trashIcon));
     }
+  });
+
+  /**
+   * Event Handler for clicking on trash bin (un-favorite)
+   */
+
+  $favoritedArticles.on("click", ".fa-trash-alt", async function () {
+    // add favorite story via POST request
+    await currentUser.removeFavoriteStory(this.parentElement.id);
+    // append favorite story to HTML
+    this.parentElement.remove();
   });
 
   /**
@@ -195,7 +206,7 @@ $(async function() {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story, icon) {
+  function generateStoryHTML(story, icon = '') {
     let hostName = getHostName(story.url);
 
     // render story markup
