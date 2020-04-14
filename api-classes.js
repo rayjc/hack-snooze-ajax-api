@@ -65,6 +65,35 @@ class StoryList {
     }
     return null;
   }
+
+  /**
+   * Method to make a DELETE request to /stories/<storyId> and remove story from list
+   * - user - the current instance of User who will remove the story
+   * - storyId - id of story to be deleted
+   *
+   */
+
+  async removeStory(user, storyId) {
+    const userStoryInd = user.ownStories.findIndex((item) => item.storyId == storyId);
+    if (userStoryInd === -1)  return;   // exit early if user does not own the story
+
+    // remove story from ownStories
+    user.ownStories.splice(userStoryInd, 1);
+    // remove story from storyList
+    this.stories.splice(
+      this.stories.findIndex((item) => item.storyId == storyId), 1
+    );
+
+    try {
+      const response = await axios.delete(
+        `${BASE_URL}/stories/${storyId}`,
+        { data: { token: user.loginToken } }
+      );
+    } catch (error) {
+      axiosErrorHandler(error);
+    }
+    return null;
+  }
 }
 
 

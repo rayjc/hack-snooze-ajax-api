@@ -12,7 +12,11 @@ $(async function() {
   const $favoritedArticles = $("#favorited-articles");
   // icons
   const starIcon = '<i class="far fa-star"></i>';
+  const starInvIcon = '<i class="fas fa-star"></i>';
   const trashIcon = '<i class="fas fa-trash-alt"></i>';
+  // suffixes
+  const ownSuffix = '-own';
+  const favSuffix = '-fav';
 
   // global storyList variable
   let storyList = null;
@@ -110,8 +114,12 @@ $(async function() {
     const url = $('#create-story-url').val();
     // create story via POST request
     const newStory = await storyList.addStory(currentUser, {author, title, url});
-    // append story to HTML
-    $ownStories.append(generateStoryHTML(newStory));
+    // add story to memory
+    currentUser.ownStories.push(newStory);
+    // append story to HTML main page
+    $allStoriesList.prepend(generateStoryHTML(newStory, starIcon));
+    // append story to HTML own story page
+    $ownStories.append(generateStoryHTML(newStory, trashIcon, ownSuffix));
     // clear input fields
     $('#create-story-author, #create-story-title, #create-story-url').val('');
   });
@@ -125,18 +133,33 @@ $(async function() {
     const story = await currentUser.addFavoriteStory(this.parentElement.id);
     // append favorite story to HTML
     if (story) {
-      $favoritedArticles.append(generateStoryHTML(story, trashIcon));
+      $favoritedArticles.append(generateStoryHTML(story, starInvIcon, favSuffix));
     }
   });
 
   /**
-   * Event Handler for clicking on trash bin (un-favorite)
+   * Event Handler for clicking on trash bin under favorites (un-favorite)
    */
 
-  $favoritedArticles.on("click", ".fa-trash-alt", async function () {
-    // add favorite story via POST request
-    await currentUser.removeFavoriteStory(this.parentElement.id);
-    // append favorite story to HTML
+  $favoritedArticles.on("click", ".fa-star", async function () {
+    // remove favorite story via DELETE request
+    await currentUser.removeFavoriteStory(this.parentElement.id.replace(favSuffix, ''));
+    // remove favorite story to HTML
+    this.parentElement.remove();
+  });
+
+  /**
+   * Event Handler for clicking on trash bin under own stories (remove story)
+   */
+
+  $ownStories.on("click", ".fa-trash-alt", async function () {
+    // remove story via DELETE request
+    await storyList.removeStory(currentUser, this.parentElement.id);
+    // remove story from main page
+    $(`#${this.parentElement.id.replace(ownSuffix, '')}`).remove()
+    // remove story from fav page
+    $(`#${this.parentElement.id.replace(ownSuffix, favSuffix)}`).remove()
+    // remove story from own stories
     this.parentElement.remove();
   });
 
@@ -159,8 +182,8 @@ $(async function() {
     generateStories(storyList.stories, $allStoriesList, starIcon);
 
     if (currentUser) {
-      generateStories(currentUser.favorites, $favoritedArticles, trashIcon);
-      generateStories(currentUser.ownStories, $ownStories);
+      generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
+      generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
       showElementsForLoggedInUser();
     }
   }
@@ -181,8 +204,8 @@ $(async function() {
     // show the stories
     $allStoriesList.show();
 
-    generateStories(currentUser.favorites, $favoritedArticles, trashIcon);
-    generateStories(currentUser.ownStories, $ownStories);
+    generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
+    generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
     showElementsForLoggedInUser();
   }
 
@@ -191,13 +214,13 @@ $(async function() {
    *  which will generate a storyListInstance. Then render it.
    */
 
-  function generateStories(stories, $listSelector, icon = '') {
+  function generateStories(stories, $listSelector, icon = '', suffix = '') {
     // empty out that part of the page
     $listSelector.empty();
 
     // loop through all of our stories and generate HTML for them
     for (let story of stories) {
-      const result = generateStoryHTML(story, icon);
+      const result = generateStoryHTML(story, icon, suffix);
       $listSelector.append(result);
     }
   }
@@ -206,12 +229,12 @@ $(async function() {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story, icon = '') {
+  function generateStoryHTML(story, icon = '', suffix = '') {
     let hostName = getHostName(story.url);
 
     // render story markup
     const storyMarkup = $(`
-      <li id="${story.storyId}">
+      <li id="${story.storyId}${suffix}">
         ${icon}
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
