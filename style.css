@@ -39,7 +39,7 @@ a:hover {
 
 nav {
   display: flex;
-  background-color: #ff6600;
+  background-color: #00bbff;
   align-items: center;
   padding: 5px 20px;
   border-radius: 3px 3px 0 0;
@@ -146,7 +146,7 @@ form > hr {
 
 .fa-star,
 .fa-trash-alt,
-.pencil {
+.fa-edit {
   font-size: 0.75rem;
   margin: 0 2px;
   cursor: pointer;

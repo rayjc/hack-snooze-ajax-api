@@ -11,17 +11,24 @@ $(async function() {
   const $navToggles = $('.nav-link.toggle');
   const $navUser = $('#nav-user-profile');
   const $createStoryForm = $("#create-story-form");
+  const $storyAuthor = $('#create-story-author');
+  const $storyTitle = $('#create-story-title');
+  const $storyUrl = $('#create-story-url');
+  const $editForm = $('#edit-article-form');
+  const $editAuthor = $('#edit-story-author');
+  const $editTitle = $('#edit-story-title');
+  const $editUrl = $('#edit-story-url');
   const $favoritedArticles = $("#favorited-articles");
   const $userProfile = $('#user-profile');
   const $profileDate = $('#profile-account-date');
   const $profileName = $('#profile-name-input');
   const $profilePassword = $('#profile-name-password');
   const $profileForm = $('#profile-update-form');
-
   // icons
   const starIcon = '<i class="far fa-star"></i>';
   const starInvIcon = '<i class="fas fa-star"></i>';
   const trashIcon = '<i class="fas fa-trash-alt"></i>';
+  const pencilIcon = '<i class="fas fa-edit"></i>';
   // suffixes
   const ownSuffix = '-own';
   const favSuffix = '-fav';
@@ -128,8 +135,10 @@ $(async function() {
    */
 
   $navToggles.on("click", function() {
-    // hide all toggles;
+    // hide all toggles
     $navToggles.each((index, el) => $($(el).data('toggle')).hide());
+    // edit form
+    $editForm.hide();
     if (this.id === "nav-post") {
       $allStoriesList.show();
     } else {
@@ -165,9 +174,9 @@ $(async function() {
     event.preventDefault();
 
     // extract story inputs
-    const author = $('#create-story-author').val();
-    const title = $('#create-story-title').val();
-    const url = $('#create-story-url').val();
+    const author = $storyAuthor.val();
+    const title = $storyTitle.val();
+    const url = $storyUrl.val();
     // create story via POST request
     const newStory = await storyList.addStory(currentUser, {author, title, url});
     // add story to memory
@@ -175,9 +184,32 @@ $(async function() {
     // append story to HTML main page
     $allStoriesList.prepend(generateStoryHTML(newStory, starIcon));
     // append story to HTML own story page
-    $ownStories.append(generateStoryHTML(newStory, trashIcon, ownSuffix));
+    $ownStories.append(generateStoryHTML(newStory, trashIcon, ownSuffix, true));
     // clear input fields
     $('#create-story-author, #create-story-title, #create-story-url').val('');
+  });
+
+  /**
+   * Event Handler for Submitting story edit form
+   */
+
+  $editForm.on("submit", async function (event) {
+    event.preventDefault();
+
+    // extract story inputs
+    const author = $editAuthor.val();
+    const title = $editTitle.val();
+    const url = $editUrl.val();
+    const storyId = $editForm.data('target');
+    // create story via PATCH request
+    const newStory = await storyList.updateStory(currentUser, storyId, author, title, url);
+    if (newStory){
+      // add story to memory
+      currentUser.ownStories.push(newStory);
+      // clear input fields
+      $('#create-story-author, #create-story-title, #create-story-url').val('');
+      location.reload();
+    }
   });
 
   /**
@@ -238,6 +270,24 @@ $(async function() {
   });
 
   /**
+   * Event Handler for clicking on edit icon under own stories (update edit form)
+   */
+
+  $ownStories.on("click", ".fa-edit", async function () {
+    const $this = $(this);
+    // populate story edit form
+    $editAuthor.val($this.parent().find('.article-author').text().replace('by ', ''));
+    $editTitle.val($this.parent().find('a strong').text());
+    $editUrl.val($this.parent().find('a').attr('href'));
+    // display edit form
+    if ($editForm.css('display') === "none"){
+      $editForm.slideToggle();
+    }
+    // label form data with the latest id of the element clicked on
+    $editForm.data('target', $this.parent().attr('id').replace(ownSuffix, ''));
+  });
+
+  /**
    * On page load, checks local storage to see if the user is already logged in.
    * Renders page information accordingly.
    */
@@ -284,7 +334,7 @@ $(async function() {
    *  which will generate a storyListInstance. Then render it.
    */
 
-  function generateStories(stories, $listSelector, icon = '', suffix = '') {
+  function generateStories(stories, $listSelector, icon = '', suffix = '', isEditable = false) {
     // empty out that part of the page
     if (stories.length !== 0){
       $listSelector.empty();
@@ -292,7 +342,7 @@ $(async function() {
 
     // loop through all of our stories and generate HTML for them
     for (let story of stories) {
-      const result = generateStoryHTML(story, icon, suffix);
+      const result = generateStoryHTML(story, icon, suffix, isEditable);
       $listSelector.append(result);
     }
   }
@@ -301,8 +351,9 @@ $(async function() {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story, icon = '', suffix = '') {
+  function generateStoryHTML(story, icon = '', suffix = '', isEditable = false) {
     let hostName = getHostName(story.url);
+    const editIcon = isEditable ? pencilIcon : '';
 
     // render story markup
     const storyMarkup = $(`
@@ -311,6 +362,7 @@ $(async function() {
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
+        ${editIcon}
         <small class="article-author">by ${story.author}</small>
         <small class="article-hostname ${hostName}">(${hostName})</small>
         <small class="article-username">posted by ${story.username}</small>
@@ -375,7 +427,7 @@ $(async function() {
 
   function loginInit() {
     generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
-    generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
+    generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix, true);
     showNavForLoggedInUser();
     updateUserProfile();
     // append star icons to articles

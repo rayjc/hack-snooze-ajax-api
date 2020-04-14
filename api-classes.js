@@ -92,6 +92,43 @@ class StoryList {
     } catch (error) {
       axiosErrorHandler(error);
     }
+  }
+
+  /**
+   * Method to make a PATCH request to /stories/<storyId> and update story from list
+   * - user - the current instance of User who will remove the story
+   * - storyId - id of story to be deleted
+   *
+   * Returns the updated story object
+   */
+
+  async updateStory(user, storyId, author, title, url) {
+    const userStoryInd = user.ownStories.findIndex((item) => item.storyId == storyId);
+    if (userStoryInd === -1)  return;   // exit early if user does not own the story
+
+    // remove story from ownStories
+    user.ownStories.splice(userStoryInd, 1);
+    // remove story from storyList
+    this.stories.splice(
+      this.stories.findIndex((item) => item.storyId == storyId), 1
+    );
+
+    try {
+      const response = await axios.patch(
+        `${BASE_URL}/stories/${storyId}`, {
+        token: user.loginToken,
+        story: {
+          author,
+          title,
+          url,
+        }
+      });
+      const storyObj = new Story(response.data.story);
+      this.stories.push(storyObj);
+      return storyObj;
+    } catch (error) {
+      axiosErrorHandler(error);
+    }
     return null;
   }
 }

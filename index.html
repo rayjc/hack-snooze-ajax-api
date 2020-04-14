@@ -85,10 +85,18 @@
     <form action="#" id="edit-article-form" class="hidden" method="post">
       <h4>Article Information</h4>
       <div class="edit-input">
-        <label for="edit-title">Title</label>
-        <input id="edit-title" type="text">
-        <button type="submit">change</button>
+        <label for="edit-story-author">Author:</label>
+        <input id="edit-story-author" type="text" required>
       </div>
+      <div class="edit-input">
+        <label for="edit-story-title">Title:</label>
+        <input id="edit-story-title" type="text" required>
+      </div>
+      <div class="edit-input">
+        <label for="edit-story-url">Url:</label>
+        <input id="edit-story-url" type="url" required>
+      </div>
+      <button type="submit">Update</button>
     </form>
   </section>
   <section class="account-forms-container container">
