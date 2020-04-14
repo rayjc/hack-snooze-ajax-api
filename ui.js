@@ -154,7 +154,7 @@ $(async function() {
 
   $ownStories.on("click", ".fa-trash-alt", async function () {
     // remove story via DELETE request
-    await storyList.removeStory(currentUser, this.parentElement.id);
+    await storyList.removeStory(currentUser, this.parentElement.id.replace(ownSuffix, ''));
     // remove story from main page
     $(`#${this.parentElement.id.replace(ownSuffix, '')}`).remove()
     // remove story from fav page
