@@ -8,8 +8,15 @@ $(async function() {
   const $ownStories = $("#my-articles");
   const $navLogin = $("#nav-login");
   const $navLogOut = $("#nav-logout");
+  const $navToggles = $('.nav-link.toggle');
+  const $navUser = $('#nav-user-profile');
   const $createStoryForm = $("#create-story-form");
   const $favoritedArticles = $("#favorited-articles");
+  const $userProfile = $('#user-profile');
+  const $profileName = $('#profile-name');
+  const $profileUsername = $('#profile-username');
+  const $profileDate = $('#profile-account-date');
+
   // icons
   const starIcon = '<i class="far fa-star"></i>';
   const starInvIcon = '<i class="fas fa-star"></i>';
@@ -44,6 +51,7 @@ $(async function() {
     currentUser = userInstance;
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
+    updateUserProfile();
   });
 
   /**
@@ -64,6 +72,7 @@ $(async function() {
     currentUser = newUser;
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
+    updateUserProfile();
   });
 
   /**
@@ -89,15 +98,36 @@ $(async function() {
   });
 
   /**
+   * Event Handler for Clicking nav toggle links
+   */
+
+  $navToggles.on("click", function() {
+    // hide all toggles;
+    $navToggles.each((index, el) => $($(el).data('toggle')).hide());
+    if (this.id === "nav-post") {
+      $allStoriesList.show();
+    } else {
+      $allStoriesList.hide();
+    }
+    // toggle clicked
+    const $toggleTarget = $($(this).data('toggle'));
+    $toggleTarget.slideToggle();
+    // show empty message if there are no articles
+    if ($toggleTarget.find('.article-link').length) {
+      $toggleTarget.find('.empty-li').hide();
+    } else {
+      $toggleTarget.find('.empty-li').show();
+    }
+  });
+
+  /**
    * Event handler for Navigation to Homepage
    */
 
   $("body").on("click", "#nav-all", async function() {
     hideElements();
-    // update global variable
-    storyList = await StoryList.getStories()
-    generateStories(storyList.stories, $allStoriesList, starIcon);
     
+    await checkIfLoggedIn();
     $allStoriesList.show();
   });
 
@@ -125,15 +155,25 @@ $(async function() {
   });
 
   /**
-   * Event Handler for clicking on star (favorite)
+   * Event Handler for clicking on star (favorite/un-favorite)
    */
 
   $allStoriesList.on("click", ".fa-star", async function () {
-    // add favorite story via POST request
-    const story = await currentUser.addFavoriteStory(this.parentElement.id);
-    // append favorite story to HTML
-    if (story) {
-      $favoritedArticles.append(generateStoryHTML(story, starInvIcon, favSuffix));
+    if (this.classList.contains('far')) {
+      // add favorite story via POST request
+      const story = await currentUser.addFavoriteStory(this.parentElement.id);
+      $(`#${this.parentElement.id} .fa-star`).replaceWith($(starInvIcon));
+      // append favorite story to HTML
+      if (story) {
+        $favoritedArticles.append(generateStoryHTML(story, starInvIcon, favSuffix));
+      }
+    } else {
+      // remove favorite story via DELETE request
+      await currentUser.removeFavoriteStory(this.parentElement.id);
+      // remove favorite story from favorite page
+      $(`#${this.parentElement.id}${favSuffix}`).remove();
+      // replace star icon in main article list
+      $(`#${this.parentElement.id} .fa-star`).replaceWith($(starIcon));
     }
   });
 
@@ -144,8 +184,13 @@ $(async function() {
   $favoritedArticles.on("click", ".fa-star", async function () {
     // remove favorite story via DELETE request
     await currentUser.removeFavoriteStory(this.parentElement.id.replace(favSuffix, ''));
+    // replace star icon in main article list
+    $(`#${this.parentElement.id.replace(favSuffix, '')} .fa-star`).replaceWith($(starIcon));
     // remove favorite story to HTML
     this.parentElement.remove();
+    // show empty message if no articles
+    if ($favoritedArticles.find('.article-link').length === 0)
+      $favoritedArticles.find('.empty-li').show();
   });
 
   /**
@@ -161,6 +206,9 @@ $(async function() {
     $(`#${this.parentElement.id.replace(ownSuffix, favSuffix)}`).remove()
     // remove story from own stories
     this.parentElement.remove();
+    // show empty message if no articles
+    if ($ownStories.find('.article-link').length === 0)
+      $ownStories.find('.empty-li').show();
   });
 
   /**
@@ -174,17 +222,15 @@ $(async function() {
     const username = localStorage.getItem("username");
 
     // if there is a token in localStorage, call User.getLoggedInUser
-    //  to get an instance of User with the right details
-    //  this is designed to run once, on page load
+    // to get an instance of User with the right details
+    // this is designed to run once, on page load
     currentUser = await User.getLoggedInUser(token, username);
     // update our global variable
     storyList = await StoryList.getStories();
-    generateStories(storyList.stories, $allStoriesList, starIcon);
+    generateStories(storyList.stories, $allStoriesList);
 
     if (currentUser) {
-      generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
-      generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
-      showElementsForLoggedInUser();
+      loginInit();
     }
   }
 
@@ -204,9 +250,7 @@ $(async function() {
     // show the stories
     $allStoriesList.show();
 
-    generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
-    generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
-    showElementsForLoggedInUser();
+    loginInit();
   }
 
   /**
@@ -216,7 +260,9 @@ $(async function() {
 
   function generateStories(stories, $listSelector, icon = '', suffix = '') {
     // empty out that part of the page
-    $listSelector.empty();
+    if (stories.length !== 0){
+      $listSelector.empty();
+    }
 
     // loop through all of our stories and generate HTML for them
     for (let story of stories) {
@@ -257,25 +303,19 @@ $(async function() {
       $filteredArticles,
       $ownStories,
       $loginForm,
-      $createAccountForm
+      $createAccountForm,
+      $userProfile,
+      $favoritedArticles,
+      $ownStories
     ];
     elementsArr.forEach($elem => $elem.hide());
   }
 
   function showNavForLoggedInUser() {
     $navLogin.hide();
-    $navLogOut.show();
-  }
-
-  function showElementsForLoggedInUser() {
-    // update the navigation bar
-    showNavForLoggedInUser();
-    // show new story form
-    $createStoryForm.show();
-    // show own stories
-    $ownStories.show();
-    // show favorite stories;
-    $favoritedArticles.show();
+    $navUser.text(`${currentUser.name}`);
+    $navUser.parent().show();
+    $('#nav-post, #nav-stories, #nav-fav').show();
   }
 
   /* simple function to pull the hostname from a URL */
@@ -300,5 +340,24 @@ $(async function() {
       localStorage.setItem("token", currentUser.loginToken);
       localStorage.setItem("username", currentUser.username);
     }
+  }
+
+  function updateUserProfile() {
+    $profileName.html(`Name: <b>${currentUser.name}</b>`);
+    $profileUsername.html(`Username: <b>${currentUser.username}</b>`);
+    $profileDate.html(`Account Created: <b>${currentUser.createdAt}</b>`);
+  }
+
+  function loginInit() {
+    generateStories(currentUser.favorites, $favoritedArticles, starInvIcon, favSuffix);
+    generateStories(currentUser.ownStories, $ownStories, trashIcon, ownSuffix);
+    showNavForLoggedInUser();
+    updateUserProfile();
+    // append star icons to articles
+    $allStoriesList.find('li').prepend($(starIcon));
+    // overwrite star icons for favorited stories
+    currentUser.favorites
+      .map((story) => story.storyId)
+      .forEach((storyId) => $(`#${storyId} .fa-star`).replaceWith($(starInvIcon)));
   }
 });

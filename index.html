@@ -14,14 +14,36 @@
 <body>
   <nav>
     <b><a class="nav-link navbar-brand" href="#" id="nav-all">Hack or Snooze</a></b>
+    <a class="nav-link toggle" href="#" id="nav-board" data-toggle="#all-articles-list">Board</a>
+    <a class="nav-link hidden toggle" href="#" id="nav-fav" data-toggle="#favorited-articles">My Favorites</a>
+    <a class="nav-link hidden toggle" href="#" id="nav-stories" data-toggle="#my-articles">My Stories</a>
+    <a class="nav-link hidden toggle" href="#" id="nav-post" data-toggle="#create-story-form">New Post</a>
     <a class="nav-link nav-right" href="#" id="nav-login">login/create user</a>
     <span class="nav-link nav-right hidden" id="nav-welcome">
-      <a href="#" id="nav-user-profile"></a>
+      <a href="#" class="nav-link toggle" id="nav-user-profile" data-toggle="#user-profile"></a>
+      <a class="nav-right" id="nav-logout" href="#">
+        <small>(logout)</small>
+      </a>
     </span>
-    <a class="hidden" id="nav-logout" href="#">
-      <small>(logout)</small>
-    </a>
   </nav>
+  <section id="story-section" class="container">
+    <form action="" id="create-story-form" class="story-form hidden" method="POST">
+      <h4>New Story</h4>
+      <div class="story-input">
+        <label for="create-story-author">Author:</label>
+        <input id="create-story-author" type="text" required>
+      </div>
+      <div class="story-input">
+        <label for="create-story-title">Title:</label>
+        <input id="create-story-title" type="text" required>
+      </div>
+      <div class="story-input">
+        <label for="create-story-url">Url:</label>
+        <input id="create-story-url" type="url" required>
+      </div>
+      <button type="submit">Post Story</button>
+    </form>
+  </section>
   <section class="articles-container container">
     <form action="" class="hidden" id="submit-form">
       <div>
@@ -46,6 +68,7 @@
     </article>
     <article>
       <ul id="favorited-articles" class="hidden articles-list">
+        <li class="empty-li">Nothing to show yet!</li>
       </ul>
     </article>
     <article>
@@ -54,6 +77,7 @@
     </article>
     <article>
       <ul id="my-articles" class="hidden articles-list">
+        <li class="empty-li">Nothing to show yet!</li>
       </ul>
     </article>
   </section>
@@ -98,25 +122,7 @@
       <button type="submit">create account</button>
     </form>
   </section>
-  <section id="story-section" class="container">
-    <form action="" id="create-story-form" class="story-form hidden" method="POST">
-      <h4>New Story</h4>
-      <div class="story-input">
-        <label for="create-story-author">Author:</label>
-        <input id="create-story-author" type="text" required>
-      </div>
-      <div class="story-input">
-        <label for="create-story-title">Title:</label>
-        <input id="create-story-title" type="text" required>
-      </div>
-      <div class="story-input">
-        <label for="create-story-url">Url:</label>
-        <input id="create-story-url" type="url" required>
-      </div>
-      <button type="submit">Post Story</button>
-    </form>
-  </section>
-  <section id="user-profile" class="container hidden">
+  <section id="user-profile" class="container">
     <h4>User Profile Info</h4>
     <section>
       <div id="profile-name">Name:</div>
