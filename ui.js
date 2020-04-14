@@ -13,9 +13,10 @@ $(async function() {
   const $createStoryForm = $("#create-story-form");
   const $favoritedArticles = $("#favorited-articles");
   const $userProfile = $('#user-profile');
-  const $profileName = $('#profile-name');
-  const $profileUsername = $('#profile-username');
   const $profileDate = $('#profile-account-date');
+  const $profileName = $('#profile-name-input');
+  const $profilePassword = $('#profile-name-password');
+  const $profileForm = $('#profile-update-form');
 
   // icons
   const starIcon = '<i class="far fa-star"></i>';
@@ -76,6 +77,27 @@ $(async function() {
       syncCurrentUserToLocalStorage();
       loginAndSubmitForm();
       updateUserProfile();
+    }
+  });
+
+  /**
+   * Event listener for updating user profile.
+   *  If successfully we will update current user instance
+   */
+
+  $profileForm.on("submit", async function(evt) {
+    evt.preventDefault(); // no page refresh
+
+    // grab the required fields
+    const name = $profileName.val();
+    const password = $profilePassword.val();
+
+    // call the create method, which calls the API and then builds a new user instance
+    const newUser = await currentUser.updateUser(name, password);
+    if (newUser) {
+      currentUser.name = newUser.name;
+      updateUserProfile();
+      location.reload();
     }
   });
 
@@ -347,9 +369,8 @@ $(async function() {
   }
 
   function updateUserProfile() {
-    $profileName.html(`Name: <b>${currentUser.name}</b>`);
-    $profileUsername.html(`Username: <b>${currentUser.username}</b>`);
     $profileDate.html(`Account Created: <b>${currentUser.createdAt}</b>`);
+    $profileName.attr('placeholder', currentUser.name);
   }
 
   function loginInit() {

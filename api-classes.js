@@ -265,6 +265,34 @@ class User {
       axiosErrorHandler(error);
     }
   }
+
+  async updateUser(name, password){
+    try {
+      const response = await axios.patch(`${BASE_URL}/users/${this.username}`, {
+        token: this.loginToken,
+        user: {
+          username: this.username,
+          name,
+          password
+        }
+      });
+      // build a new User instance from the API response
+      const newUser = new User(response.data.user);
+
+      // attach the token to the newUser instance for convenience
+      newUser.loginToken = response.data.token;
+      // update name
+      this.name = name;
+
+      return newUser;
+    } catch (error) {
+      axiosErrorHandler(error);
+      if (error.response.status === 409) {
+        alert("Sorry, this username already exists!")
+      }
+    }
+    return null;
+  }
 }
 
 /**

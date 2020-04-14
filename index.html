@@ -125,9 +125,14 @@
   <section id="user-profile" class="container">
     <h4>User Profile Info</h4>
     <section>
-      <div id="profile-name">Name:</div>
-      <div id="profile-username">Username:</div>
       <div id="profile-account-date">Account Created:</div>
+      <form action="#" id="profile-update-form" method="POST">
+        <label for="profile-name-input">Name:</label>
+        <input type="text" name="profile-name" id="profile-name-input" required>
+        <label for="profile-password-input">Password:</label>
+        <input type="password" name="profile-password" id="profile-password-input" required>
+        <button type="submit">Update</button>
+      </form>
     </section>
   </section>
 </body>
