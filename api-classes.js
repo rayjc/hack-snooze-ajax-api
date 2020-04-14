@@ -125,21 +125,28 @@ class User {
    */
 
   static async create(username, password, name) {
-    const response = await axios.post(`${BASE_URL}/signup`, {
-      user: {
-        username,
-        password,
-        name
+    try {
+      const response = await axios.post(`${BASE_URL}/signup`, {
+        user: {
+          username,
+          password,
+          name
+        }
+      });  
+      // build a new User instance from the API response
+      const newUser = new User(response.data.user);
+  
+      // attach the token to the newUser instance for convenience
+      newUser.loginToken = response.data.token;
+  
+      return newUser;
+    } catch (error) {
+      axiosErrorHandler(error);
+      if (error.response.status === 409){
+        alert("Sorry, this username already exists!")
       }
-    });
-
-    // build a new User instance from the API response
-    const newUser = new User(response.data.user);
-
-    // attach the token to the newUser instance for convenience
-    newUser.loginToken = response.data.token;
-
-    return newUser;
+    }
+    return null;
   }
 
   /* Login in user and return user instance.
@@ -149,24 +156,32 @@ class User {
    */
 
   static async login(username, password) {
-    const response = await axios.post(`${BASE_URL}/login`, {
-      user: {
-        username,
-        password
+    try {
+      const response = await axios.post(`${BASE_URL}/login`, {
+        user: {
+          username,
+          password
+        }
+      });
+
+      // build a new User instance from the API response
+      const existingUser = new User(response.data.user);
+
+      // instantiate Story instances for the user's favorites and ownStories
+      existingUser.favorites = response.data.user.favorites.map(s => new Story(s));
+      existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
+
+      // attach the token to the newUser instance for convenience
+      existingUser.loginToken = response.data.token;
+
+      return existingUser;      
+    } catch (error) {
+      axiosErrorHandler(error);
+      if (error.response.status === 401){
+        alert("Username and password do not match!")
       }
-    });
+    }
 
-    // build a new User instance from the API response
-    const existingUser = new User(response.data.user);
-
-    // instantiate Story instances for the user's favorites and ownStories
-    existingUser.favorites = response.data.user.favorites.map(s => new Story(s));
-    existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
-
-    // attach the token to the newUser instance for convenience
-    existingUser.loginToken = response.data.token;
-
-    return existingUser;
   }
 
   /** Get user instance for the logged-in-user.
