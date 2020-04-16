@@ -25,15 +25,18 @@ class StoryList {
   // A class/static method would be preferrably since this factory method is functional
   // or without side effect; ie. it doesn't save or modify any states of an instance.
   static async getStories() {
-    // query the /stories endpoint (no auth required)
-    const response = await axios.get(`${BASE_URL}/stories`);
-
-    // turn the plain old story objects from the API into instances of the Story class
-    const stories = response.data.stories.map(story => new Story(story));
-
-    // build an instance of our own class using the new array of stories
-    const storyList = new StoryList(stories);
-    return storyList;
+    try {
+      // query the /stories endpoint (no auth required)
+      const response = await axios.get(`${BASE_URL}/stories`);
+      // turn the plain old story objects from the API into instances of the Story class
+      const stories = response.data.stories.map(story => new Story(story));
+      // build an instance of our own class using the new array of stories
+      const storyList = new StoryList(stories);
+      return storyList;
+    } catch (error) {
+      axiosErrorHandler(error);
+    }
+    return null
   }
 
   /**
@@ -77,21 +80,21 @@ class StoryList {
     const userStoryInd = user.ownStories.findIndex((item) => item.storyId == storyId);
     if (userStoryInd === -1)  return;   // exit early if user does not own the story
 
-    // remove story from ownStories
-    user.ownStories.splice(userStoryInd, 1);
-    // remove story from storyList
-    this.stories.splice(
-      this.stories.findIndex((item) => item.storyId == storyId), 1
-    );
-
     try {
       const response = await axios.delete(
         `${BASE_URL}/stories/${storyId}`,
         { data: { token: user.loginToken } }
       );
+      // remove story from ownStories
+      user.ownStories.splice(userStoryInd, 1);
+      // remove story from storyList
+      this.stories.splice(
+        this.stories.findIndex((item) => item.storyId == storyId), 1
+      );
     } catch (error) {
       axiosErrorHandler(error);
     }
+
   }
 
   /**
@@ -106,13 +109,6 @@ class StoryList {
     const userStoryInd = user.ownStories.findIndex((item) => item.storyId == storyId);
     if (userStoryInd === -1)  return;   // exit early if user does not own the story
 
-    // remove story from ownStories
-    user.ownStories.splice(userStoryInd, 1);
-    // remove story from storyList
-    this.stories.splice(
-      this.stories.findIndex((item) => item.storyId == storyId), 1
-    );
-
     try {
       const response = await axios.patch(
         `${BASE_URL}/stories/${storyId}`, {
@@ -123,6 +119,12 @@ class StoryList {
           url,
         }
       });
+      // remove story from ownStories
+      user.ownStories.splice(userStoryInd, 1);
+      // remove story from storyList
+      this.stories.splice(
+        this.stories.findIndex((item) => item.storyId == storyId), 1
+      );
       const storyObj = new Story(response.data.story);
       this.stories.push(storyObj);
       return storyObj;
@@ -290,13 +292,14 @@ class User {
     // this function should return the newly created story so it can be used in
     // the script.js file where it will be appended to the DOM
     // remove story from list
-    this.favorites.splice(
-      this.favorites.findIndex((item) => item.storyId == storyId), 1
-    );
+
     try {
       const response = await axios.delete(
         `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
         { data: {token: this.loginToken} }
+      );
+      this.favorites.splice(
+        this.favorites.findIndex((item) => item.storyId == storyId), 1
       );
     } catch (error) {
       axiosErrorHandler(error);
@@ -324,9 +327,6 @@ class User {
       return newUser;
     } catch (error) {
       axiosErrorHandler(error);
-      if (error.response.status === 409) {
-        alert("Sorry, this username already exists!")
-      }
     }
     return null;
   }
